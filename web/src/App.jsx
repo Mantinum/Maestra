@@ -3,8 +3,8 @@ import { useState } from "react";
 const MODES = [
   { value: "talk", label: "Discuter en corse" },
   { value: "translate", label: "Traduire" },
-  { value: "correct", label: "Corriger" },
-  { value: "explain", label: "Expliquer" }
+  { value: "correct", label: "Corriger le corse" },
+  { value: "explain", label: "Expliquer une règle" }
 ];
 
 export default function App() {
