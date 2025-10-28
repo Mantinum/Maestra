@@ -38,12 +38,22 @@ class ChatResponse(BaseModel):
     answer: str
 
 
-SIMULATED_RESPONSES: dict[Mode, str] = {
-    Mode.TALK: "TODO: réponse corse ici (mode conversation)",
-    Mode.TRANSLATE: "TODO: traduction corse/français ici",
-    Mode.CORRECT: "TODO: correction et explication en corse ici",
-    Mode.EXPLAIN: "TODO: explication de règle en corse/français ici",
-}
+def construire_reponse_simulee(payload: ChatRequest) -> str:
+    """Fabrique une réponse textuelle en fonction du mode demandé."""
+
+    if payload.mode == Mode.TALK:
+        return f"Bonghjornu 🙂 Ti rispondu in corsu (démo) : {payload.input_text}"
+    if payload.mode == Mode.TRANSLATE:
+        return f"Traduction simulée : {payload.input_text}"
+    if payload.mode == Mode.CORRECT:
+        return (
+            "Correction simulée : "
+            f"{payload.input_text}"
+            " | Spiegazione: (démo)"
+        )
+    if payload.mode == Mode.EXPLAIN:
+        return "Explication simulée d'une règle de langue corse."
+    raise HTTPException(status_code=400, detail="Mode non pris en charge")
 
 
 @app.post("/chat", response_model=ChatResponse)
@@ -53,9 +63,7 @@ async def chat_endpoint(payload: ChatRequest) -> ChatResponse:
     Pour l'instant, les réponses sont statiques en attendant le branchement du modèle.
     """
 
-    simulated_answer = SIMULATED_RESPONSES.get(payload.mode)
-    if not simulated_answer:
-        raise HTTPException(status_code=400, detail="Mode non pris en charge")
+    simulated_answer = construire_reponse_simulee(payload)
     return ChatResponse(answer=simulated_answer)
 
 
