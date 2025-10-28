@@ -21,9 +21,9 @@ from transformers import (
     TrainingArguments,
 )
 
-# NOTE : choisir un modèle de base open source sous licence permissive compatible.
-# Exemple possible : "mistralai/Mistral-7B-Instruct-v0.2".
-MODEL_NAME = "mistral-7b-instruct"  # TODO: préciser le repo HF exact lors de l'entraînement réel.
+# Modèle de base instruct multilingue (licence permissive) retenu pour Maestra.
+# IMPORTANT : conserver ce modèle de référence pour la reproductibilité du fine-tune.
+MODEL_NAME = "mistralai/Mistral-7B-Instruct-v0.2"
 
 DATA_PATH = Path("data/training_examples.jsonl")
 CHECKPOINT_DIR = Path("model/checkpoints")
@@ -51,6 +51,9 @@ def build_prompt(example: Dict[str, Any]) -> Dict[str, str]:
 
     instruction = example.get("instruction", "").strip()
     response = example.get("response", "").strip()
+    # On entraîne le modèle comme un assistant : l'utilisateur pose une question
+    # ("instruction"), le modèle doit répondre en corse / expliquer.
+    # IMPORTANT : garder ce format EXACT pour la génération plus tard.
     prompt = PROMPT_TEMPLATE.format(instruction=instruction, response=response)
     return {"text": prompt, "instruction": instruction, "response": response}
 
@@ -180,19 +183,31 @@ def generate_demo(
 ) -> str:
     """Génère une réponse de démonstration avec le modèle fine-tuné."""
 
+    # Ceci sert à tester le modèle fine-tuné localement après entraînement.
     adapter_dir = Path(adapter_dir)
-    tokenizer = AutoTokenizer.from_pretrained(
-        adapter_dir if adapter_dir.exists() else MODEL_NAME
-    )
+    if not adapter_dir.exists():
+        raise FileNotFoundError(
+            "Adaptateur LoRA introuvable. Lancez l'entraînement avant de tester."
+        )
+
+    tokenizer = AutoTokenizer.from_pretrained(MODEL_NAME)
     if tokenizer.pad_token is None:
         tokenizer.pad_token = tokenizer.eos_token
 
     prompt = INFERENCE_TEMPLATE.format(instruction=user_instruction.strip())
-    device = model_device()
-    inputs = tokenizer(prompt, return_tensors="pt").to(device)
+    inputs = tokenizer(prompt, return_tensors="pt")
 
-    model = load_model_with_adapter(adapter_dir=adapter_dir)
+    model = AutoModelForCausalLM.from_pretrained(
+        MODEL_NAME,
+        device_map="auto",
+        torch_dtype="auto",
+    )
+    model = PeftModel.from_pretrained(model, str(adapter_dir))
+    model.eval()
+
+    device = model_device()
     model.to(device)
+    inputs = {k: v.to(device) for k, v in inputs.items()}
 
     with torch.no_grad():
         generated = model.generate(
@@ -205,7 +220,6 @@ def generate_demo(
         )
 
     decoded = tokenizer.decode(generated[0], skip_special_tokens=True)
-    # Supprime le prompt initial pour ne garder que la réponse générée.
     response = decoded.replace(prompt, "").strip()
     return response or "(Réponse vide)"
 

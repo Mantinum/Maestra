@@ -4,11 +4,11 @@ Ce dossier regroupe les ressources nécessaires pour adapter un modèle de langu
 
 ## Modèle de base
 
-Nous partons d'un modèle open source de type *instruct* (ex. `mistralai/Mistral-7B-Instruct-v0.2`). Il doit impérativement être distribué sous licence permissive pour permettre la publication du résultat.
+Nous retenons explicitement le modèle `mistralai/Mistral-7B-Instruct-v0.2`, un modèle *instruct* multilingue sous licence permissive. Ce sera la fondation de Maestra : l'adapter LoRA viendra se greffer dessus sans modifier les poids d'origine.
 
 ## Données
 
-Le script `finetune.py` consomme les exemples d'instruction-tuning stockés dans `../data/training_examples.jsonl`. Chaque entrée contient :
+Le script `finetune.py` consomme les exemples d'instruction-tuning stockés dans `../data/training_examples.jsonl` (environ 25 entrées actuellement). Chaque entrée contient :
 
 - `instruction` : consigne utilisateur,
 - `response` : réponse attendue de Maestra,
@@ -34,10 +34,10 @@ Les hyperparamètres (batch size, accumulation, précision `fp16`/`bf16`) sont v
 
 La fonction `generate_demo()` du script :
 
-- recharge le modèle de base,
-- applique l'adapter LoRA sauvegardé,
-- formate une instruction au même format que l'entraînement,
-- génère une réponse (ex. `model.generate()`),
+- recharge le tokenizer et le modèle de base `mistralai/Mistral-7B-Instruct-v0.2`,
+- applique l'adapter LoRA sauvegardé depuis `model/checkpoints/adapter/`,
+- reformate l'instruction utilisateur exactement comme pendant l'entraînement,
+- génère une réponse (via `model.generate()`),
 - renvoie le texte produit.
 
 Cela permet de valider rapidement la qualité du modèle fine-tuné avant intégration dans l'API.
