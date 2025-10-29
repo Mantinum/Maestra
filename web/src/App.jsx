@@ -1,4 +1,5 @@
 import { useState } from "react";
+import Contribute from "./Contribute.jsx";
 
 const MODES = [
   { value: "talk", label: "Discuter en corse" },
@@ -7,7 +8,13 @@ const MODES = [
   { value: "explain", label: "Expliquer une règle" }
 ];
 
+const VIEWS = {
+  CHAT: "chat",
+  CONTRIBUTE: "contribute"
+};
+
 export default function App() {
+  const [currentView, setCurrentView] = useState(VIEWS.CHAT);
   const [mode, setMode] = useState(MODES[0].value);
   const [inputText, setInputText] = useState("");
   const [answer, setAnswer] = useState("");
@@ -48,51 +55,73 @@ export default function App() {
       <header>
         <h1>A Maestra</h1>
         <p>Appli de démonstration pour discuter avec l'IA corse (simulée).</p>
-      </header>
-      <main className="card">
-        <form onSubmit={handleSubmit} className="form">
-          <label className="form-label" htmlFor="mode">
-            Mode d'interaction
-          </label>
-          <select
-            id="mode"
-            className="form-select"
-            value={mode}
-            onChange={(event) => setMode(event.target.value)}
+        <nav className="nav-tabs">
+          <button
+            type="button"
+            className={`tab-button${currentView === VIEWS.CHAT ? " active" : ""}`}
+            onClick={() => setCurrentView(VIEWS.CHAT)}
           >
-            {MODES.map((option) => (
-              <option key={option.value} value={option.value}>
-                {option.label}
-              </option>
-            ))}
-          </select>
-
-          <label className="form-label" htmlFor="input-text">
-            Votre texte
-          </label>
-          <textarea
-            id="input-text"
-            className="form-textarea"
-            placeholder="Saisissez votre texte ici..."
-            value={inputText}
-            onChange={(event) => setInputText(event.target.value)}
-            rows={6}
-            required
-          />
-
-          <button className="submit-button" type="submit" disabled={isLoading}>
-            {isLoading ? "Génération en cours..." : "Envoyer"}
+            Discuter
           </button>
-        </form>
+          <button
+            type="button"
+            className={`tab-button${currentView === VIEWS.CONTRIBUTE ? " active" : ""}`}
+            onClick={() => setCurrentView(VIEWS.CONTRIBUTE)}
+          >
+            Contribuer
+          </button>
+        </nav>
+      </header>
+      <main>
+        {currentView === VIEWS.CHAT ? (
+          <div className="card">
+            <form onSubmit={handleSubmit} className="form">
+              <label className="form-label" htmlFor="mode">
+                Mode d'interaction
+              </label>
+              <select
+                id="mode"
+                className="form-select"
+                value={mode}
+                onChange={(event) => setMode(event.target.value)}
+              >
+                {MODES.map((option) => (
+                  <option key={option.value} value={option.value}>
+                    {option.label}
+                  </option>
+                ))}
+              </select>
 
-        <section className="response-section">
-          <h2>Réponse</h2>
-          {error && <p className="error-text">{error}</p>}
-          {!error && answer && <p className="answer-text">{answer}</p>}
-          {!error && !answer && !isLoading && (
-            <p className="placeholder-text">Aucune réponse pour l'instant.</p>
-          )}
-        </section>
+              <label className="form-label" htmlFor="input-text">
+                Votre texte
+              </label>
+              <textarea
+                id="input-text"
+                className="form-textarea"
+                placeholder="Saisissez votre texte ici..."
+                value={inputText}
+                onChange={(event) => setInputText(event.target.value)}
+                rows={6}
+                required
+              />
+
+              <button className="submit-button" type="submit" disabled={isLoading}>
+                {isLoading ? "Génération en cours..." : "Envoyer"}
+              </button>
+            </form>
+
+            <section className="response-section">
+              <h2>Réponse</h2>
+              {error && <p className="error-text">{error}</p>}
+              {!error && answer && <p className="answer-text">{answer}</p>}
+              {!error && !answer && !isLoading && (
+                <p className="placeholder-text">Aucune réponse pour l'instant.</p>
+              )}
+            </section>
+          </div>
+        ) : (
+          <Contribute />
+        )}
       </main>
     </div>
   );

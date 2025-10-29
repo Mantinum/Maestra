@@ -1,5 +1,8 @@
 """Application FastAPI simulant l'IA corse pour A Maestra."""
 from enum import Enum
+import json
+import time
+from pathlib import Path
 
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
@@ -38,6 +41,19 @@ class ChatResponse(BaseModel):
     answer: str
 
 
+class ContributionRequest(BaseModel):
+    """Schéma d'entrée pour collecter les propositions de la communauté."""
+
+    direction: str
+    source_text: str
+    target_text: str
+    notes: str | None = None
+
+
+DATA_DIRECTORY = Path(__file__).resolve().parent.parent / "data"
+CONTRIBUTIONS_FILE = DATA_DIRECTORY / "contributions_pending.jsonl"
+
+
 def construire_reponse_simulee(payload: ChatRequest) -> str:
     """Fabrique une réponse textuelle en fonction du mode demandé."""
 
@@ -65,6 +81,25 @@ async def chat_endpoint(payload: ChatRequest) -> ChatResponse:
 
     simulated_answer = construire_reponse_simulee(payload)
     return ChatResponse(answer=simulated_answer)
+
+
+@app.post("/contribute")
+async def contribute(payload: ContributionRequest) -> dict[str, str]:
+    """Enregistre une proposition de contribution linguistique utilisateur."""
+
+    DATA_DIRECTORY.mkdir(exist_ok=True)
+    line = {
+        "direction": payload.direction,
+        "source_text": payload.source_text,
+        "target_text": payload.target_text,
+        "notes": payload.notes,
+        "timestamp": time.time(),
+    }
+
+    with CONTRIBUTIONS_FILE.open("a", encoding="utf-8") as file:
+        file.write(json.dumps(line, ensure_ascii=False) + "\n")
+
+    return {"status": "ok", "message": "Merci pour ta contribution ❤️"}
 
 
 @app.get("/health")
