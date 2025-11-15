@@ -1,0 +1,7 @@
+# Dépendances nécessaires pour l'entraînement LoRA (non requises pour l'API locale).
+transformers>=4.38.0
+datasets>=2.16.0
+peft>=0.7.0
+accelerate>=0.26.0
+# TODO: choisir la version de torch compatible avec votre GPU/CUDA.
+torch>=2.1.0
